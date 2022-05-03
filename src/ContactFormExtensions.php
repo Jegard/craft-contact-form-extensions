@@ -216,7 +216,7 @@ class ContactFormExtensions extends Plugin
                     ]
                 );
 
-                file_put_contents(__DIR__ . '/count.json', json_encode($num));
+                file_put_contents(Craft::$app->path->storagePath . '/count.json', json_encode($num));
 
                 // Create the confirmation email
                 $message = new Message();
