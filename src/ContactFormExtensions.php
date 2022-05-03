@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Craft Contact Form Extensions plugin for Craft CMS 3.x.
  *
@@ -23,6 +24,8 @@ use hybridinteractive\contactformextensions\models\Settings;
 use hybridinteractive\contactformextensions\services\ContactFormExtensionsService as ContactFormExtensionsServiceService;
 use hybridinteractive\contactformextensions\variables\ContactFormExtensionsVariable;
 use yii\base\Event;
+
+use hybridinteractive\contactformextensions\elements\ContactFormSubmission;
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -129,7 +132,7 @@ class ContactFormExtensions extends Plugin
 
             $submission = $e->submission;
             if ($this->settings->enableDatabase && $saveSubmissionOverride != true) {
-                $this->contactFormExtensionsService->saveSubmission($submission);
+                $lastSavedSubmission = $this->contactFormExtensionsService->saveSubmission($submission);
             }
 
             // Set the overridden "toEmail" setting
@@ -145,17 +148,30 @@ class ContactFormExtensions extends Plugin
 
                 // Check if template is overridden in form
                 if (is_array($e->submission->message) && array_key_exists('notificationTemplate', $e->submission->message)) {
-                    $template = '_emails\\'.Craft::$app->security->validateData($e->submission->message['notificationTemplate']);
+                    $template = '_emails\\' . Craft::$app->security->validateData($e->submission->message['notificationTemplate']);
                 } else {
                     // Render the set template
                     $template = $this->settings->notificationTemplate;
                 }
 
+                $num = json_decode(file_get_contents(__DIR__ . '/count.json'), true);
+                $ref = '';
+                if (str_contains($e->submission['subject'], 'part A') || str_contains($e->submission['subject'], 'part B')) {
+                    $num['count']++;
+                }
+                if (str_contains($e->submission['subject'], 'part A')) $ref = 'A';
+                if (str_contains($e->submission['subject'], 'part B')) $ref = 'B';
+
                 // Render the set template
                 $html = Craft::$app->view->renderTemplate(
                     $template,
-                    ['submission' => $e->submission]
+                    [
+                        'submission' => $e->submission,
+                        'count' => $ref . $num['count']
+                    ]
                 );
+
+                file_put_contents(__DIR__ . '/count.json', json_encode($num));
 
                 // Update the message body
                 $e->message->setHtmlBody($html);
@@ -180,15 +196,26 @@ class ContactFormExtensions extends Plugin
                 // Check if template is overridden in form
                 $template = null;
                 if (is_array($e->submission->message) && array_key_exists('template', $e->submission->message)) {
-                    $template = '_emails\\'.Craft::$app->security->validateData($e->submission->message['template']);
+                    $template = '_emails\\' . Craft::$app->security->validateData($e->submission->message['template']);
                 } else {
                     // Render the set template
                     $template = $this->settings->confirmationTemplate;
                 }
+
+                $num = json_decode(file_get_contents(__DIR__ . '/count.json'), true);
+                $ref = '';
+                if (str_contains($e->submission['subject'], 'part A')) $ref = 'A';
+                if (str_contains($e->submission['subject'], 'part B')) $ref = 'B';
+
                 $html = Craft::$app->view->renderTemplate(
                     $template,
-                    ['submission' => $e->submission]
+                    [
+                        'submission' => $e->submission,
+                        'count' => $ref . $num['count']
+                    ]
                 );
+
+                file_put_contents(__DIR__ . '/count.json', json_encode($num));
 
                 // Create the confirmation email
                 $message = new Message();
