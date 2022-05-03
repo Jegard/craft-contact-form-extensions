@@ -154,7 +154,8 @@ class ContactFormExtensions extends Plugin
                     $template = $this->settings->notificationTemplate;
                 }
 
-                $num = json_decode(file_get_contents(__DIR__ . '/count.json'), true);
+
+                $num = json_decode(file_get_contents(Craft::$app->path->storagePath . '/count.json'), true);
                 $ref = '';
                 if (str_contains($e->submission['subject'], 'part A') || str_contains($e->submission['subject'], 'part B')) {
                     $num['count']++;
@@ -202,7 +203,7 @@ class ContactFormExtensions extends Plugin
                     $template = $this->settings->confirmationTemplate;
                 }
 
-                $num = json_decode(file_get_contents(__DIR__ . '/count.json'), true);
+                $num = json_decode(file_get_contents(Craft::$app->path->storagePath . '/count.json'), true);
                 $ref = '';
                 if (str_contains($e->submission['subject'], 'part A')) $ref = 'A';
                 if (str_contains($e->submission['subject'], 'part B')) $ref = 'B';
